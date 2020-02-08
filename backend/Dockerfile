@@ -4,4 +4,4 @@ WORKDIR /backend
 ADD requirements.txt /backend/
 RUN pip install -r requirements.txt
 ADD . /backend/
-EXPOSE 8000
+EXPOSE 8080
