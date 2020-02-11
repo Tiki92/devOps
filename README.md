@@ -8,8 +8,10 @@
    - <pre><code>sudo chmod +x /usr/local/bin/docker-compose</pre></code>
    - <pre><code>ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose</pre></code>
    - <pre><code>docker-compose --version</pre></code>
-4. Clone this repository: git clone -----
-5. Start containsers: docker-compose -f docker-compose.yml up --build
+4. Clone this repository: git clone https://github.com/Tiki92/devOps.git
+5. Start containsers:
+   - cd devOps
+   - docker-compose -f docker-compose.yml up --build
 6. Create Load Balancer:
    - On AWS Load Balancing -> Load Balancers -> Create Load Balancer -> Classic Load Balancer
    - Name the balancer
