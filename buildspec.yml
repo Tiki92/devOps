@@ -10,5 +10,4 @@ phases:
         - docker -v
         - docker-compose -v
         - docker-compose build
-        - docker-compose up
         
