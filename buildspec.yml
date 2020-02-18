@@ -7,7 +7,5 @@ phases:
     commands:
         - ls
         - docker -v
-        - docker-compose --version
-        - docker-compose down
-        - docker-compose build
-        - docker-compose up
+        - docker build
+        - docker up
