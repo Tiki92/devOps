@@ -6,9 +6,9 @@ phases:
   build:
     commands:
         - ls
+        - pwd
         - docker -v
         - docker-compose -v
-        - docker start
         - docker-compose build
         - docker-compose -f docker-compose.yml up
         
