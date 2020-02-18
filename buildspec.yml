@@ -3,6 +3,8 @@ phases:
   install:
     runtime-versions:
       docker: 18
+    commands:
+      - usermod -aG docker $USER
   build:
     commands:
         - ls
