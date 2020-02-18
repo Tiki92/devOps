@@ -3,6 +3,9 @@ phases:
   build:
     commands:
         - ls
+        - docker info
+        - sudo docker info
+        - docker-compose --version
         - docker-compose -f docker-compose.yml down
         - docker-compose -f docker-compose.yml build
         - docker-compose -f docker-compose.yml up
