@@ -1,0 +1,8 @@
+version: 0.2
+phases:
+  build:
+    commands:
+        - cd devOps
+        - docker-compose -f docker-compose.yml down
+        - docker-compose -f docker-compose.yml build
+        - docker-compose -f docker-compose.yml up
