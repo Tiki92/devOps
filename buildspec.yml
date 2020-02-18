@@ -10,5 +10,5 @@ phases:
         - docker -v
         - docker-compose -v
         - docker-compose build
-        - docker-compose -f docker-compose.yml up
+        - docker-compose up
         
