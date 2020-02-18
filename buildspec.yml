@@ -6,7 +6,6 @@ phases:
   build:
     commands:
         - ls
-        - docker info
         - sudo docker info
         - docker-compose --version
         - docker-compose down
