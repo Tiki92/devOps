@@ -207,6 +207,16 @@ Resources:
     Metadata:
       'AWS::CloudFormation::Designer':
         id: 2c540c86-d4c9-4b56-9456-89164ff9818f
+  EC2R23ESW:
+    Type: 'AWS::EC2::Route'
+    DependsOn: EC2VPCG2WJ0D
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref EC2IG2CJGB
+      RouteTableId: !Ref EC2RT1HQAJ
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: e4884df1-3380-4933-9676-ffff0997bb8a
 Outputs:
   InstanceId:
     Description: InstanceId of the newly created EC2 instance
@@ -373,8 +383,8 @@ Metadata:
         width: 140
         height: 140
       position:
-        x: 1303.3575083812175
-        'y': 227.44907461655637
+        x: 950
+        'y': -20
       z: 0
       embeds: []
       iscontainedinside:
@@ -404,3 +414,11 @@ Metadata:
         - ac2cfeca-ecdc-44b2-9eb0-83fbcacef11e
       iscontainedinside:
         - 5327dd37-9be1-400e-8c3f-4f8dd18cc384
+    e4884df1-3380-4933-9676-ffff0997bb8a:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: 1120.7609362090361
+        'y': 211.13480095828402
+      z: 0
