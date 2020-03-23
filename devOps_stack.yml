@@ -23,8 +23,8 @@ Mappings:
     t2.micro:
       Arch: NATHVM64
   AWSRegionArch2AMI:
-    us-east-2:
-      HVM64: ami-0cd3dfa4e37921605
+    eu-central-1:
+      HVM64: ami-0ec1ba09723e5bfac
       HVMG2: NOT_SUPPORTED
 Resources:
   EC2Instance:
@@ -112,7 +112,7 @@ Resources:
     Properties:
       CidrBlock: 10.0.1.0/24
       VpcId: !Ref VPC1
-      AvailabilityZone: us-east-2a
+      AvailabilityZone: eu-central-1a
       MapPublicIpOnLaunch: true
     Metadata:
       'AWS::CloudFormation::Designer':
@@ -156,7 +156,7 @@ Resources:
     Properties:
       CidrBlock: 10.0.2.0/24
       VpcId: !Ref VPC1
-      AvailabilityZone: us-east-2c
+      AvailabilityZone: eu-central-1c
       MapPublicIpOnLaunch: true
     Metadata:
       'AWS::CloudFormation::Designer':
