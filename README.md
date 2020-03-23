@@ -20,3 +20,4 @@
    - Create new security group type HTTP, protocol TCP, port range 80, source 0.0.0.0/0
    - Configure Health Check Ping: Protocol HTTP, Ping Port 80, Ping Path "/", Advanced Settings default
    - Add your instance
+Deploy Test
