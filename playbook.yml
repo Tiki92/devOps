@@ -1,0 +1,46 @@
+- name: Deploy
+  hosts: webservers
+  become: yes
+  gather_facts: no
+  tasks:
+    - name: Upgrade all packages
+      yum:
+        name: '*'
+        state: latest
+    - name: Install docker
+      yum:
+        name: docker
+        state: latest
+    - name: Start Docker
+      service:
+        name: docker
+        state: started
+    - name: Add user to docker group
+      user:
+        name: ec2-user
+        groups: docker
+        append: yes
+    - name: Download Docker-Compose
+      get_url:
+        url: https://github.com/docker/compose/releases/download/1.25.1-rc1/docker-compose-Linux-x86_64
+        dest: /usr/local/bin/docker-compose
+        mode: 766
+    - name: Create symlink to docker-compose
+      file:
+        src: /usr/local/bin/docker-compose
+        dest: /usr/bin/docker-compose
+    - name: Install git
+      yum:
+        name: git
+        state: present
+        update_cache: yes
+    - name: Get latest version of the project
+      git:
+        repo: https://github.com/Tiki92/devOps.git
+        dest: /home/ec2-user/devOps
+    - name: Stop docker containers
+      shell: docker-compose -f /home/ec2-user/devOps/docker-compose.yml down --volumes
+      ignore_errors: yes
+    - name: Start all docker containers
+      shell: docker-compose -f /home/ec2-user/devOps/docker-compose.yml up -d
+
