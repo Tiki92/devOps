@@ -1,3 +1,2 @@
 #!/bin/bash
-ansible-playbook playbook.yml -i ./inventory --private-key /home/ec2-user/AWS_Ansible/aws_devOps.pem -u ec2-user  --vault-password-file /var/lib/jenkins/workspace/vault.pass
-
+ansible-playbook /var/lib/jenkins/workspace/dockerCompose/playbook.yml -i /var/lib/jenkins/workspace/dockerCompose/inventory --private-key /var/lib/jenkins/workspace/devOps.pem -u ec2-user

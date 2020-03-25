@@ -32,7 +32,7 @@ Resources:
     Properties:
       InstanceType: !Ref InstanceType
       IamInstanceProfile: !Ref InstaceProfile
-      KeyName: aws_devOps
+      KeyName: devOps
       ImageId: !FindInMap 
         - AWSRegionArch2AMI
         - !Ref 'AWS::Region'

@@ -1,2 +1,2 @@
 [webservers]
-web ansible_host=18.184.156.100
+web ansible_host=52.29.7.88
