@@ -56,16 +56,8 @@ Resources:
           ToPort: '22'
           CidrIp: !Ref SSHLocation
         - IpProtocol: tcp
-          FromPort: '8090'
-          ToPort: '8090'
-          CidrIp: !Ref SSHLocation
-        - IpProtocol: tcp
           FromPort: '80'
           ToPort: '80'
-          CidrIp: !Ref SSHLocation
-        - IpProtocol: tcp
-          FromPort: '8080'
-          ToPort: '8080'
           CidrIp: !Ref SSHLocation
       VpcId: !Ref VPC1
     Metadata:
