@@ -55,6 +55,10 @@ Resources:
           FromPort: '22'
           ToPort: '22'
           CidrIp: !Ref SSHLocation
+        - IpProtocol: tcp
+          FromPort: '8090'
+          ToPort: '8090'
+          CidrIp: !Ref SSHLocation
       VpcId: !Ref VPC1
     Metadata:
       'AWS::CloudFormation::Designer':

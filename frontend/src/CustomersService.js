@@ -1,5 +1,5 @@
 import axios from 'axios';
-const API_URL = 'http://localhost:8080';
+const API_URL = 'http://52.29.7.88:8090';
 
 export default class CustomersService{
 
