@@ -1,0 +1,2 @@
+[webservers]
+web ansible_host=18.184.156.100
