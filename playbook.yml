@@ -29,6 +29,7 @@
       file:
         src: /usr/local/bin/docker-compose
         dest: /usr/bin/docker-compose
+        state: link
     - name: Install git
       yum:
         name: git
