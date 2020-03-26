@@ -8,9 +8,9 @@ Resources:
       InstanceType: 't2.micro'
       KeyName: devOps
       ImageId: 'ami-0ec1ba09723e5bfac'
-      NetworkInterfaces: 
-        - NetworkInterfaceId: !Ref NetInterface
-          DeviceIndex: '0'
+      SubnetId: !Ref PrivateSubnet1
+      SecurityGroupIds:
+        - !Ref InstanceSecurityGroup
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash
@@ -22,7 +22,7 @@ Resources:
           ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
 
 
-  InstanceSecurityGroup:
+  ElbSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
       GroupDescription: Enable SSH access via port 22
@@ -32,10 +32,19 @@ Resources:
           ToPort: '22'
           CidrIp: '0.0.0.0/0'
         - IpProtocol: tcp
-          FromPort: '80'
-          ToPort: '80'
+          FromPort: '443'
+          ToPort: '443'
           CidrIp: '0.0.0.0/0'
-      VpcId: !Ref VPC
+      VpcId: !Ref VPC1
+  
+  InstanceSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: Enable all trafic from ELB
+      SecurityGroupIngress:
+        - IpProtocol: -1
+          CidrIp: '0.0.0.0/0'
+      VpcId: !Ref VPC1
   
   IAMRole:
     Type: 'AWS::IAM::Role'
@@ -70,34 +79,71 @@ Resources:
       Roles:
         - !Ref IAMRole
   
-  VPC:
+  VPC1:
     Type: 'AWS::EC2::VPC'
     Properties:
       EnableDnsSupport: true
       EnableDnsHostnames: true
       CidrBlock: 10.0.0.0/16
   
+  ElasticIPAddress:
+   Type: AWS::EC2::EIP
+   Properties:
+     Domain: vpc
+
+  NATGateway:
+   Type: AWS::EC2::NatGateway
+   Properties:
+     AllocationId: !GetAtt ElasticIPAddress.AllocationId
+     SubnetId: !Ref PrivateSubnet1
+  
   PubSubnet1:
     Type: 'AWS::EC2::Subnet'
     Properties:
-      CidrBlock: 10.0.1.0/24
-      VpcId: !Ref VPC
+      CidrBlock: 10.0.10.0/24
+      VpcId: !Ref VPC1
       AvailabilityZone: eu-central-1a
       MapPublicIpOnLaunch: true
   
   PubSubnet2:
     Type: 'AWS::EC2::Subnet'
     Properties:
-      CidrBlock: 10.0.2.0/24
-      VpcId: !Ref VPC
+      CidrBlock: 10.0.20.0/24
+      VpcId: !Ref VPC1
       AvailabilityZone: eu-central-1c
       MapPublicIpOnLaunch: true
+  
+  PrivateRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties: 
+      VpcId: !Ref VPC1
+
+  PrivateDefaultRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      DestinationCidrBlock: "0.0.0.0/0"
+      NatGatewayId: !Ref NATGateway
+      RouteTableId: !Ref PrivateRouteTable
+  
+  PrivateRouteSubnetAssociation1:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: 
+      RouteTableId: !Ref PrivateRouteTable
+      SubnetId: !Ref PrivateSubnet1
+  
+  PrivateSubnet1:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      CidrBlock: 10.0.30.0/24
+      VpcId: !Ref VPC1
+      AvailabilityZone: eu-central-1a
+      MapPublicIpOnLaunch: false
   
   LoadBalancer:
     Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
     Properties:
       SecurityGroups:
-        - !Ref InstanceSecurityGroup
+        - !Ref ElbSecurityGroup
       SubnetMappings:
         - SubnetId: !Ref PubSubnet1
         - SubnetId: !Ref PubSubnet2
@@ -119,7 +165,7 @@ Resources:
       Protocol: HTTP
       Targets:
         - Id: !Ref Instance
-      VpcId: !Ref VPC
+      VpcId: !Ref VPC1
   
   InternetGateway:
     Type: 'AWS::EC2::InternetGateway'
@@ -128,13 +174,13 @@ Resources:
   VPCGateway:
     Type: 'AWS::EC2::VPCGatewayAttachment'
     Properties:
-      VpcId: !Ref VPC
+      VpcId: !Ref VPC1
       InternetGatewayId: !Ref InternetGateway
 
   RouteTable:
     Type: 'AWS::EC2::RouteTable'
     Properties:
-      VpcId: !Ref VPC
+      VpcId: !Ref VPC1
   
   SubnetRT1:
     Type: 'AWS::EC2::SubnetRouteTableAssociation'
@@ -152,7 +198,7 @@ Resources:
     Type: 'AWS::EC2::NetworkInterface'
     Properties:
       GroupSet:
-        - !Ref InstanceSecurityGroup
+        - !Ref ElbSecurityGroup
       SubnetId: !Ref PubSubnet2
 
   Route:
