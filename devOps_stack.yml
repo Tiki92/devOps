@@ -1,51 +1,27 @@
 AWSTemplateFormatVersion: 2010-09-09
-Parameters:
-  InstanceType:
-    Description: WebServer EC2 instance type
-    Type: String
-    Default: t2.micro
-    AllowedValues:
-      - t2.micro
-    ConstraintDescription: must be a valid EC2 instance type.
-  SSHLocation:
-    Description: The IP address range that can be used to SSH to the EC2 instances
-    Type: String
-    MinLength: '9'
-    MaxLength: '18'
-    Default: 0.0.0.0/0
-    AllowedPattern: '(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})'
-    ConstraintDescription: must be a valid IP CIDR range of the form x.x.x.x/x.
-Mappings:
-  AWSInstanceType2Arch:
-    t2.micro:
-      Arch: HVM64
-  AWSInstanceType2NATArch:
-    t2.micro:
-      Arch: NATHVM64
-  AWSRegionArch2AMI:
-    eu-central-1:
-      HVM64: ami-0ec1ba09723e5bfac
-      HVMG2: NOT_SUPPORTED
+
 Resources:
-  EC2Instance:
+
+  Instance:
     Type: 'AWS::EC2::Instance'
     Properties:
-      InstanceType: !Ref InstanceType
-      IamInstanceProfile: !Ref InstaceProfile
+      InstanceType: 't2.micro'
       KeyName: devOps
-      ImageId: !FindInMap 
-        - AWSRegionArch2AMI
-        - !Ref 'AWS::Region'
-        - !FindInMap 
-          - AWSInstanceType2Arch
-          - !Ref InstanceType
-          - Arch
-      NetworkInterfaces:
+      ImageId: 'ami-0ec1ba09723e5bfac'
+      NetworkInterfaces: 
         - NetworkInterfaceId: !Ref NetInterface
           DeviceIndex: '0'
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: 927bc0a1-07ec-412f-94eb-5e1e626e7db1
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          yum update -y
+          yum install git -y
+          yum install docker
+          curl -L https://github.com/docker/compose/releases/download/1.21.0/docker-compose-`uname -s`-`uname -m` | sudo tee /usr/local/bin/docker-compose > /dev/null
+          chmod +x /usr/local/bin/docker-compose
+          ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
+
+
   InstanceSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
@@ -54,16 +30,14 @@ Resources:
         - IpProtocol: tcp
           FromPort: '22'
           ToPort: '22'
-          CidrIp: !Ref SSHLocation
+          CidrIp: '0.0.0.0/0'
         - IpProtocol: tcp
           FromPort: '80'
           ToPort: '80'
-          CidrIp: !Ref SSHLocation
-      VpcId: !Ref VPC1
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: ac2cfeca-ecdc-44b2-9eb0-83fbcacef11e
-  Role1:
+          CidrIp: '0.0.0.0/0'
+      VpcId: !Ref VPC
+  
+  IAMRole:
     Type: 'AWS::IAM::Role'
     Properties:
       AssumeRolePolicyDocument:
@@ -75,13 +49,11 @@ Resources:
             Action:
               - 'sts:AssumeRole'
       Path: /
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: 81c18e0c-3070-4bec-bfea-da68d3270513
-  Policy1:
+
+  IAMPolicy:
     Type: 'AWS::IAM::Policy'
     Properties:
-      PolicyName: Policy1
+      PolicyName: IAMPolicy
       PolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -89,49 +61,47 @@ Resources:
             Action: '*'
             Resource: '*'
       Roles:
-        - !Ref Role1
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: 1dbde6c0-ca16-4655-a769-2bd5b26e6a6d
+        - !Ref IAMRole
+  
   InstaceProfile:
     Type: 'AWS::IAM::InstanceProfile'
     Properties:
       Path: /
       Roles:
-        - !Ref Role1
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: f4b5c943-a2cc-4cdc-a511-931db2a2ed26
-  VPC1:
+        - !Ref IAMRole
+  
+  VPC:
     Type: 'AWS::EC2::VPC'
     Properties:
       EnableDnsSupport: true
       EnableDnsHostnames: true
       CidrBlock: 10.0.0.0/16
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: 731f57b4-6cae-4a27-92c6-20035829b7ca
-  Subnet1:
+  
+  PubSubnet1:
     Type: 'AWS::EC2::Subnet'
     Properties:
       CidrBlock: 10.0.1.0/24
-      VpcId: !Ref VPC1
+      VpcId: !Ref VPC
       AvailabilityZone: eu-central-1a
       MapPublicIpOnLaunch: true
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: 9cd80251-7ba1-48d0-b74b-bc5a85398aa8
+  
+  PubSubnet2:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      CidrBlock: 10.0.2.0/24
+      VpcId: !Ref VPC
+      AvailabilityZone: eu-central-1c
+      MapPublicIpOnLaunch: true
+  
   LoadBalancer:
     Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
     Properties:
       SecurityGroups:
         - !Ref InstanceSecurityGroup
       SubnetMappings:
-        - SubnetId: !Ref Subnet1
-        - SubnetId: !Ref Subnet2
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: d7b34390-22e0-4486-91c3-287a3202ac59
+        - SubnetId: !Ref PubSubnet1
+        - SubnetId: !Ref PubSubnet2
+
   LoadListener:
     Type: 'AWS::ElasticLoadBalancingV2::Listener'
     Properties:
@@ -141,83 +111,54 @@ Resources:
       LoadBalancerArn: !Ref LoadBalancer
       Port: 80
       Protocol: HTTP
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: 95589ae2-d0e1-49ba-bea1-a4c82aec8de5
+
   TargetGroup:
     Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
     Properties:
       Port: 80
       Protocol: HTTP
       Targets:
-        - Id: !Ref EC2Instance
-      VpcId: !Ref VPC1
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: bb69ac88-5f53-4b5e-a755-c57e6569bc10
-  Subnet2:
-    Type: 'AWS::EC2::Subnet'
-    Properties:
-      CidrBlock: 10.0.2.0/24
-      VpcId: !Ref VPC1
-      AvailabilityZone: eu-central-1c
-      MapPublicIpOnLaunch: true
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: 5327dd37-9be1-400e-8c3f-4f8dd18cc384
-  EC2IG2CJGB:
+        - Id: !Ref Instance
+      VpcId: !Ref VPC
+  
+  InternetGateway:
     Type: 'AWS::EC2::InternetGateway'
     Properties: {}
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: c9368e27-22af-46e0-80d9-5edeb596fe59
-  EC2VPCG2WJ0D:
+  
+  VPCGateway:
     Type: 'AWS::EC2::VPCGatewayAttachment'
     Properties:
-      VpcId: !Ref VPC1
-      InternetGatewayId: !Ref EC2IG2CJGB
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: 8c172c51-b43b-49c0-bf9c-d6314fa4b288
-  EC2RT1HQAJ:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+
+  RouteTable:
     Type: 'AWS::EC2::RouteTable'
     Properties:
-      VpcId: !Ref VPC1
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: 238499e9-460a-4d7b-bf36-2b70ea53f81b
+      VpcId: !Ref VPC
+  
   SubnetRT1:
     Type: 'AWS::EC2::SubnetRouteTableAssociation'
     Properties:
-      RouteTableId: !Ref EC2RT1HQAJ
-      SubnetId: !Ref Subnet1
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: be159c28-de50-42af-b592-9e29f220c3a1
+      RouteTableId: !Ref RouteTable
+      SubnetId: !Ref PubSubnet1
+
   SubnetRT2:
     Type: 'AWS::EC2::SubnetRouteTableAssociation'
     Properties:
-      RouteTableId: !Ref EC2RT1HQAJ
-      SubnetId: !Ref Subnet2
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: 421485ca-a68f-477b-ae90-bed843c549e7
+      RouteTableId: !Ref RouteTable
+      SubnetId: !Ref PubSubnet2
+  
   NetInterface:
     Type: 'AWS::EC2::NetworkInterface'
     Properties:
       GroupSet:
         - !Ref InstanceSecurityGroup
-      SubnetId: !Ref Subnet2
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: 2c540c86-d4c9-4b56-9456-89164ff9818f
-  EC2R23ESW:
+      SubnetId: !Ref PubSubnet2
+
+  Route:
     Type: 'AWS::EC2::Route'
-    DependsOn: EC2VPCG2WJ0D
+    DependsOn: VPCGateway
     Properties:
       DestinationCidrBlock: 0.0.0.0/0
-      GatewayId: !Ref EC2IG2CJGB
-      RouteTableId: !Ref EC2RT1HQAJ
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: e4884df1-3380-4933-9676-ffff0997bb8a
+      GatewayId: !Ref InternetGateway
+      RouteTableId: !Ref RouteTable
