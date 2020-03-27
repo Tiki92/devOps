@@ -21,7 +21,6 @@ Resources:
           chmod +x /usr/local/bin/docker-compose
           ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
 
-
   ElbSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
@@ -42,7 +41,9 @@ Resources:
     Properties:
       GroupDescription: Enable all trafic from ELB
       SecurityGroupIngress:
-        - IpProtocol: -1
+        - IpProtocol: tcp
+          FromPort: '80'
+          ToPort: '80'
           CidrIp: '0.0.0.0/0'
       VpcId: !Ref VPC1
   
@@ -86,16 +87,22 @@ Resources:
       EnableDnsHostnames: true
       CidrBlock: 10.0.0.0/16
   
-  ElasticIPAddress:
-   Type: AWS::EC2::EIP
-   Properties:
-     Domain: vpc
+  RouteTable:
+    Type: 'AWS::EC2::RouteTable'
+    Properties:
+      VpcId: !Ref VPC1
+  
+  SubnetRT1:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      RouteTableId: !Ref RouteTable
+      SubnetId: !Ref PubSubnet1
 
-  NATGateway:
-   Type: AWS::EC2::NatGateway
-   Properties:
-     AllocationId: !GetAtt ElasticIPAddress.AllocationId
-     SubnetId: !Ref PrivateSubnet1
+  SubnetRT2:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      RouteTableId: !Ref RouteTable
+      SubnetId: !Ref PubSubnet2
   
   PubSubnet1:
     Type: 'AWS::EC2::Subnet'
@@ -113,6 +120,17 @@ Resources:
       AvailabilityZone: eu-central-1c
       MapPublicIpOnLaunch: true
   
+  ElasticIPAddress:
+   Type: AWS::EC2::EIP
+   Properties:
+     Domain: vpc
+
+  NATGateway:
+   Type: AWS::EC2::NatGateway
+   Properties:
+     AllocationId: !GetAtt ElasticIPAddress.AllocationId
+     SubnetId: !Ref PubSubnet2
+  
   PrivateRouteTable:
     Type: AWS::EC2::RouteTable
     Properties: 
@@ -125,19 +143,42 @@ Resources:
       NatGatewayId: !Ref NATGateway
       RouteTableId: !Ref PrivateRouteTable
   
-  PrivateRouteSubnetAssociation1:
-    Type: AWS::EC2::SubnetRouteTableAssociation
-    Properties: 
-      RouteTableId: !Ref PrivateRouteTable
-      SubnetId: !Ref PrivateSubnet1
-  
   PrivateSubnet1:
     Type: 'AWS::EC2::Subnet'
     Properties:
       CidrBlock: 10.0.30.0/24
       VpcId: !Ref VPC1
-      AvailabilityZone: eu-central-1a
+      AvailabilityZone: eu-central-1b
       MapPublicIpOnLaunch: false
+  
+  PrivateSubnet2:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      CidrBlock: 10.0.40.0/24
+      VpcId: !Ref VPC1
+      AvailabilityZone: eu-central-1c
+      MapPublicIpOnLaunch: false
+  
+  PrivateRouteSubnetAssociation1:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: 
+      RouteTableId: !Ref RouteTable
+      SubnetId: !Ref PrivateSubnet1
+
+  PrivateRouteSubnetAssociation2:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: 
+      RouteTableId: !Ref PrivateRouteTable
+      SubnetId: !Ref PrivateSubnet2
+  
+  LoadBalancer2:
+    Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
+    Properties:
+      SecurityGroups:
+        - !Ref ElbSecurityGroup
+      SubnetMappings:
+        - SubnetId: !Ref PrivateSubnet1
+        - SubnetId: !Ref PrivateSubnet2
   
   LoadBalancer:
     Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
@@ -157,7 +198,7 @@ Resources:
       LoadBalancerArn: !Ref LoadBalancer
       Port: 80
       Protocol: HTTP
-
+  
   TargetGroup:
     Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
     Properties:
@@ -177,23 +218,6 @@ Resources:
       VpcId: !Ref VPC1
       InternetGatewayId: !Ref InternetGateway
 
-  RouteTable:
-    Type: 'AWS::EC2::RouteTable'
-    Properties:
-      VpcId: !Ref VPC1
-  
-  SubnetRT1:
-    Type: 'AWS::EC2::SubnetRouteTableAssociation'
-    Properties:
-      RouteTableId: !Ref RouteTable
-      SubnetId: !Ref PubSubnet1
-
-  SubnetRT2:
-    Type: 'AWS::EC2::SubnetRouteTableAssociation'
-    Properties:
-      RouteTableId: !Ref RouteTable
-      SubnetId: !Ref PubSubnet2
-  
   NetInterface:
     Type: 'AWS::EC2::NetworkInterface'
     Properties:
