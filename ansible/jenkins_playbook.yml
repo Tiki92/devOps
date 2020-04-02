@@ -12,7 +12,7 @@
         aws_secret_key: "{{ AWS_SECRET_ACCESS_KEY }}"
         region: "{{ AWS_REGION }}"
         name: ansible-keypair
-        key_material: "{{ lookup('file', '/home/tiki/.ssh/id_rsa.pub') }}"
+        key_material: "{{ lookup('file', '$HOME/.ssh/id_rsa.pub') }}"
 
     - name: create a cloudformation stack
       cloudformation:
