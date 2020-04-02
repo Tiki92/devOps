@@ -40,3 +40,17 @@
     name: jenkins
     state: started
     enabled: yes
+
+- name: Install plugin
+  jenkins_plugin:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - github
+    - docker-compose-build-step
+    - ansible
+
+- name: Restart service jenkins
+  service:
+    name: jenkins
+    state: restarted
