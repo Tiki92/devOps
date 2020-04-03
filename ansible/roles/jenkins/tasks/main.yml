@@ -15,7 +15,16 @@
   loop:
     - docker
     - git
+    - python-pip
     - "{{java.VERSION}}"
+
+- name: Install boto, boto3
+  pip:
+    name: "{{ item }}"
+  loop:
+    - boto==2.38.0
+    - boto3==1.2.2
+    - botocore==1.15.34
 
 # - name: Install docker
 #   yum:

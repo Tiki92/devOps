@@ -16,7 +16,7 @@
     - name: Add host private ip to group
       add_host: hostname={{ ec2_host.instances[0].network_interfaces[0].private_ip_address }} groups=ec2host
 
-- hosts: ec2_host
+- hosts: ec2host
   user: ec2-user
   become: true
   gather_facts: no
