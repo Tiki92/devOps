@@ -4,6 +4,24 @@
   vars_files:
     - /var/lib/jenkins/workspace/.keys.yml
   tasks:
+
+    - set_fact:
+         home_dir: "{{ lookup('env', 'HOME') }}"
+      become: true
+
+    - name: Create pubkey
+      openssh_keypair:
+        path: '{{ home_dir }}/.ssh/id_ssh_rsa'
+        public_key: id_ssh_rsa.pub
+
+    - name: Create key pair
+      ec2_key:
+        aws_access_key: "{{ AWS_ACCESS_KEY_ID }}"
+        aws_secret_key: "{{ AWS_SECRET_ACCESS_KEY }}"
+        region: "{{ AWS_REGION }}"
+        name: ansible-host-keypair
+        key_material: "{{ lookup('file', '{{ home_dir }}/.ssh/id_rsa.pub') }}"
+
     - name: Get Host info
       ec2_instance_info:
         aws_access_key: "{{ AWS_ACCESS_KEY_ID }}"

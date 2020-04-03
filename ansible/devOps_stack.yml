@@ -8,7 +8,7 @@ Resources:
       InstanceType: 't2.micro'
       ImageId: 'ami-0ec1ba09723e5bfac'
       SubnetId: !Ref PrivateSubnet1
-      KeyName: ansible-keypair
+      KeyName: ansible-host-keypair
       Tags:
         - 
           Key: Name
