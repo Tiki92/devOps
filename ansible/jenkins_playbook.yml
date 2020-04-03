@@ -5,6 +5,9 @@
   vars_files:
     - .keys.yml
   tasks:
+    - set_fact:
+         home_dir: "{{ lookup('env', 'HOME') }}"
+      become: true
 
     - name: Create key pair
       ec2_key:
@@ -12,7 +15,7 @@
         aws_secret_key: "{{ AWS_SECRET_ACCESS_KEY }}"
         region: "{{ AWS_REGION }}"
         name: ansible-keypair
-        key_material: "{{ lookup('file', '$HOME/.ssh/id_rsa.pub') }}"
+        key_material: "{{ lookup('file', '{{ home_dir }}/.ssh/id_rsa.pub') }}"
 
     - name: create a cloudformation stack
       cloudformation:
@@ -43,6 +46,9 @@
         filters:
           tag:Name: "Host"
       register: ec2_host
+
+    - debug:
+        var: home_dir
       
     - debug:
         var: ec2_controller.instances[0].network_interfaces[0].association.public_ip
@@ -62,5 +68,4 @@
   gather_facts: no
   roles:
     - jenkins
-  tags: jenkins 
-    
+  tags: jenkins

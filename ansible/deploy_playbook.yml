@@ -1,0 +1,35 @@
+- name: test2
+  hosts: localhost
+  gather_facts: no
+  vars_files:
+    - .keys.yml
+  tasks:
+    - name: Get Host info
+      ec2_instance_info:
+        aws_access_key: "{{ AWS_ACCESS_KEY_ID }}"
+        aws_secret_key: "{{ AWS_SECRET_ACCESS_KEY }}"
+        region: "{{ AWS_REGION }}"
+        filters:
+          tag:Name: "Host"
+      register: ec2_host
+
+    - name: Add host private ip to group
+      add_host: hostname={{ ec2_host.instances[0].network_interfaces[0].private_ip_address }} groups=ec2host
+
+- hosts: ec2_host
+  user: ec2-user
+  become: true
+  gather_facts: no
+  tasks:
+  
+    - name: Get latest git repo
+      git:
+        repo: https://github.com/Tiki92/devOps.git
+        dest: /home/ec2-user/devOps
+    
+    - name: Stop docker containers
+      shell: docker-compose -f /home/ec2-user/devOps/docker-compose.yml down --volumes
+      ignore_errors: yes
+
+    - name: Start all docker containers
+      shell: docker-compose -f /home/ec2-user/devOps/docker-compose.yml up -d
