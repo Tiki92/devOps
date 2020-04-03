@@ -2,7 +2,7 @@
   hosts: localhost
   gather_facts: no
   vars_files:
-    - .keys.yml
+    - /home/ec2-user/.keys.yml
   tasks:
     - name: Get Host info
       ec2_instance_info:
@@ -21,7 +21,7 @@
   become: true
   gather_facts: no
   tasks:
-  
+
     - name: Get latest git repo
       git:
         repo: https://github.com/Tiki92/devOps.git

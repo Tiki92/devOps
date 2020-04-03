@@ -73,8 +73,8 @@
 
 - name: Copy keys file
   copy:
-    src: ansible/.keys.yml
-    dest: /var/lib/jenkins/workspace/test
+    src: ../../../.keys.yml
+    dest: "/home/ec2-user/.keys.yml"
     owner: jenkins
     group: jenkins
     mode: '0644'
