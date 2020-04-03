@@ -5,9 +5,6 @@
     name: '*'
     state: latest
 
-- name: Install ansible
-  shell: amazon-linux-extras install ansible2
-
 - name: Install packages 
   yum:
     name: "{{ item }}"
@@ -25,14 +22,8 @@
     - boto==2.38.0
     - boto3==1.2.2
     - botocore==1.15.34
-
-# - name: Install docker
-#   yum:
-#     name: "{{ item }}"
-#     state: latest
-#   loop:
-#     - docker
-#     - git
+    - ansible
+    - python-jenkins
 
 - name: Start Docker
   service:
@@ -73,6 +64,12 @@
     home_dir: "{{ lookup('env', 'HOME') }}"
   
 - name: Copy pubkey
+  authorized_key:
+    user: ec2-user
+    state: present
+    key: "{{ lookup('file', '{{ home_dir }}/.ssh/id_rsa.pub') }}"
+
+- name: Copy pubkey
   copy:
     src: "{{ home_dir }}/.ssh/id_rsa.pub"
     dest: /home/ec2-user/.ssh/
@@ -80,19 +77,13 @@
     group: ec2-user
     mode: '0644'
 
-- name: Copy keys file
+- name: Copy rsakey
   copy:
-    src: ../../../.keys.yml
-    dest: "/var/lib/jenkins/workspace/.keys.yml"
-    owner: jenkins
-    group: jenkins
-    mode: '0644'
-
-# - name: Install Java 8 using YUM.
-#   yum:
-#     name: "{{java.VERSION}}"
-#     state: present
-#   become: true
+    src: "{{ home_dir }}/.ssh/id_rsa"
+    dest: /home/ec2-user/.ssh/
+    owner: ec2-user
+    group: ec2-user
+    mode: '0600'
 
 - name: Correct the alternatives to change default Java version.
   alternatives:
@@ -129,15 +120,41 @@
     state: started
     enabled: yes
 
+- name: Wait for connection
+  wait_for_connection:
+    delay: 7
+    timeout: 90
+
 - name: Install plugins
   jenkins_plugin:
     name: "{{ item }}"
     state: present
   loop:
-    - github
     - docker-compose-build-step
     - ansible
     - git
+
+- name: Create a directory if it does not exist
+  file:
+    path: /var/lib/jenkins/workspace/
+    state: directory
+    owner: jenkins
+    group: jenkins
+    mode: '0755'
+
+- name: Copy keys file
+  copy:
+    src: ../../../.keys.yml
+    dest: "/var/lib/jenkins/workspace/.keys.yml"
+    owner: jenkins
+    group: jenkins
+    mode: '0644'
+
+- name: Create jenkins job
+  jenkins_job:
+    config: "{{ lookup('file', '../../../ansible/jenkins_job/config.xml') }}"
+    name: devOps
+    url: 'http://localhost:8080'
 
 - name: Restart service jenkins
   service:

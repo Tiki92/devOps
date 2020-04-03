@@ -48,9 +48,6 @@
       register: ec2_host
 
     - debug:
-        var: home_dir
-      
-    - debug:
         var: ec2_controller.instances[0].network_interfaces[0].association.public_ip
     
     - debug:
