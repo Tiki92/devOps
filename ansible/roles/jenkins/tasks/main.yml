@@ -74,7 +74,7 @@
 - name: Copy keys file
   copy:
     src: ../../../.keys.yml
-    dest: "/home/ec2-user/.keys.yml"
+    dest: "/var/lib/jenkins/workspace/.keys.yml"
     owner: jenkins
     group: jenkins
     mode: '0644'

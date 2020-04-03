@@ -2,7 +2,7 @@
   hosts: localhost
   gather_facts: no
   vars_files:
-    - /home/ec2-user/.keys.yml
+    - ../.keys.yml
   tasks:
     - name: Get Host info
       ec2_instance_info:
