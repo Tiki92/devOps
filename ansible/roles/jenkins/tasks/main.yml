@@ -65,24 +65,24 @@
   
 - name: Copy pubkey
   authorized_key:
-    user: ec2-user
+    user: jenkins
     state: present
     key: "{{ lookup('file', '{{ home_dir }}/.ssh/id_rsa.pub') }}"
 
 - name: Copy pubkey
   copy:
     src: "{{ home_dir }}/.ssh/id_rsa.pub"
-    dest: /home/ec2-user/.ssh/
-    owner: ec2-user
-    group: ec2-user
+    dest: /home/jenkins/.ssh/
+    owner: jenkins
+    group: jenkins
     mode: '0644'
 
 - name: Copy rsakey
   copy:
     src: "{{ home_dir }}/.ssh/id_rsa"
-    dest: /home/ec2-user/.ssh/
-    owner: ec2-user
-    group: ec2-user
+    dest: /home/jenkins/.ssh/
+    owner: jenkins
+    group: jenkins
     mode: '0600'
 
 - name: Correct the alternatives to change default Java version.

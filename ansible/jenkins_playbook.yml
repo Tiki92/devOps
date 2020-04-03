@@ -63,6 +63,38 @@
   user: ec2-user
   become: true
   gather_facts: no
+  vars:
+    users:
+    - jenkins
+  tasks:
+
+    - name: Get home directory
+      set_fact:
+        home_dir: "{{ lookup('env', 'HOME') }}"
+
+    - name: "Create user accounts and add users to groups"
+      user:
+        name: "{{ item }}"
+        groups: "adm,ec2-user"
+      with_items: "{{ users }}"
+
+    - name: "Add authorized keys"
+      authorized_key:
+        user: "{{ item }}"
+        key: "{{ lookup('file', '{{ home_dir }}/.ssh/id_rsa.pub') }}"
+      with_items: "{{ users }}"
+
+    - name: "Allow admin users to sudo without a password"
+      lineinfile:
+        dest: "/etc/sudoers" # path: in version 2.3
+        state: "present"
+        regexp: "^%adm"
+        line: "%adm ALL=(ALL) NOPASSWD: ALL"
+
+- hosts: ec2controller
+  user: jenkins
+  become: true
+  gather_facts: no
   roles:
     - jenkins
   tags: jenkins
