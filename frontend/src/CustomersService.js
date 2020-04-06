@@ -1,9 +1,19 @@
 import axios from 'axios';
-const API_URL = 'http://52.29.7.88:80';
+const publicIp = require('public-ip');
+ 
+var ip;
+var API_URL;
 
+const getIp = async () => {
+	ip = await publicIp.v4();
+	
+		API_URL = 'http://' + ip + ':80';
+}
 export default class CustomersService{
 
-	getCustomers() {
+	async getCustomers() {
+		await getIp();
+		console.log("THE IP" + ip);
         console.log("get customers");
 		const url = `${API_URL}/api/customers/`;
 		return axios.get(url).then(response => response.data);

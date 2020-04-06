@@ -24,6 +24,19 @@
     - botocore==1.15.34
     - ansible
     - python-jenkins
+  
+- name: Get Host info
+  ec2_instance_info:
+    aws_access_key: "{{ AWS_ACCESS_KEY_ID }}"
+    aws_secret_key: "{{ AWS_SECRET_ACCESS_KEY }}"
+    region: "{{ AWS_REGION }}"
+    filters:
+      tag:Name: "Host"
+  register: ec2_host
+  
+- name: accept new ssh fingerprints
+  become: false                                         
+  shell: ssh-keyscan -H {{ ec2_host.instances[0].network_interfaces[0].private_ip_address }} >> ~/.ssh/known_hosts
 
 - name: Start Docker
   service:
@@ -62,7 +75,7 @@
 - name: Get home directory
   set_fact:
     home_dir: "{{ lookup('env', 'HOME') }}"
-  
+
 - name: Copy pubkey
   authorized_key:
     user: jenkins
@@ -133,6 +146,10 @@
     - docker-compose-build-step
     - ansible
     - git
+  register: result_plg
+  until: result_plg is success
+  retries: 3
+  delay: 3
 
 - name: Create a directory if it does not exist
   file:

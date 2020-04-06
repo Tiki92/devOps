@@ -59,6 +59,9 @@
     - name: Add host private ip to group
       add_host: hostname={{ ec2_host.instances[0].network_interfaces[0].private_ip_address }} groups=ec2host
 
+    - name: accept new ssh fingerprints                                         
+      shell: ssh-keyscan -H {{ ec2_controller.instances[0].network_interfaces[0].association.public_ip }} >> ~/.ssh/known_hosts 
+
 - hosts: ec2controller
   user: ec2-user
   become: true
@@ -86,7 +89,7 @@
 
     - name: "Allow admin users to sudo without a password"
       lineinfile:
-        dest: "/etc/sudoers" # path: in version 2.3
+        dest: "/etc/sudoers"
         state: "present"
         regexp: "^%adm"
         line: "%adm ALL=(ALL) NOPASSWD: ALL"
@@ -95,6 +98,8 @@
   user: jenkins
   become: true
   gather_facts: no
+  vars_files:
+    - .keys.yml
   roles:
     - jenkins
   tags: jenkins
