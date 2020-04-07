@@ -25,18 +25,17 @@
     - ansible
     - python-jenkins
   
-- name: Get Host info
-  ec2_instance_info:
-    aws_access_key: "{{ AWS_ACCESS_KEY_ID }}"
-    aws_secret_key: "{{ AWS_SECRET_ACCESS_KEY }}"
-    region: "{{ AWS_REGION }}"
-    filters:
-      tag:Name: "Host"
-  register: ec2_host
+- name: Instace IP
+  cloudformation_info:
+    aws_access_key: '{{ AWS_ACCESS_KEY_ID }}'
+    aws_secret_key: '{{ AWS_SECRET_ACCESS_KEY }}'
+    stack_name: ansible-cloudformation
+    region: "eu-central-1"
+  register: output
   
 - name: accept new ssh fingerprints
   become: false                                         
-  shell: ssh-keyscan -H {{ ec2_host.instances[0].network_interfaces[0].private_ip_address }} >> ~/.ssh/known_hosts
+  shell: ssh-keyscan -H {{ output.cloudformation["ansible-cloudformation"].stack_outputs.HostIp }} >> ~/.ssh/known_hosts
 
 - name: Start Docker
   service:

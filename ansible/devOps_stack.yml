@@ -213,15 +213,6 @@ Resources:
       RouteTableId: !Ref PrivateRouteTable
       SubnetId: !Ref PrivateSubnet2
   
-  LoadBalancer2:
-    Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
-    Properties:
-      SecurityGroups:
-        - !Ref ElbSecurityGroup
-      SubnetMappings:
-        - SubnetId: !Ref PrivateSubnet1
-        - SubnetId: !Ref PrivateSubnet2
-  
   LoadBalancer:
     Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
     Properties:
@@ -274,3 +265,15 @@ Resources:
       DestinationCidrBlock: 0.0.0.0/0
       GatewayId: !Ref InternetGateway
       RouteTableId: !Ref RouteTable
+
+Outputs:
+  HostIp:
+    Description: The IP of the Host Instace
+    Value: !GetAtt Instance.PrivateIp
+    Export:
+      Name: 'HostIp'
+  ControllerIp:
+    Description: The IP of the Controller Instance
+    Value: !GetAtt ControllerInstance.PublicIp
+    Export:
+      Name: 'ControllerIp'

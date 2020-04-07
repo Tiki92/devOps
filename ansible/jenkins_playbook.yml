@@ -29,38 +29,45 @@
         tags:
           Stack: "ansible-cloudformation"
 
-    - name: Get Controller Info
-      ec2_instance_info:
-        aws_access_key: "{{ AWS_ACCESS_KEY_ID }}"
-        aws_secret_key: "{{ AWS_SECRET_ACCESS_KEY }}"
-        region: "{{ AWS_REGION }}"
-        filters:
-          tag:Name: "Controller"
-      register: ec2_controller
+    # - name: Get Controller Info
+    #   ec2_instance_info:
+    #     aws_access_key: "{{ AWS_ACCESS_KEY_ID }}"
+    #     aws_secret_key: "{{ AWS_SECRET_ACCESS_KEY }}"
+    #     region: "{{ AWS_REGION }}"
+    #     filters:
+    #       tag:Name: "Controller"
+    #   register: ec2_controller
 
-    - name: Get Host info
-      ec2_instance_info:
-        aws_access_key: "{{ AWS_ACCESS_KEY_ID }}"
-        aws_secret_key: "{{ AWS_SECRET_ACCESS_KEY }}"
-        region: "{{ AWS_REGION }}"
-        filters:
-          tag:Name: "Host"
-      register: ec2_host
+    # - name: Get Host info
+    #   ec2_instance_info:
+    #     aws_access_key: "{{ AWS_ACCESS_KEY_ID }}"
+    #     aws_secret_key: "{{ AWS_SECRET_ACCESS_KEY }}"
+    #     region: "{{ AWS_REGION }}"
+    #     filters:
+    #       tag:Name: "Host"
+    #   register: ec2_host
+
+    - cloudformation_info:
+        aws_access_key: '{{ AWS_ACCESS_KEY_ID }}'
+        aws_secret_key: '{{ AWS_SECRET_ACCESS_KEY }}'
+        stack_name: ansible-cloudformation
+        region: "eu-central-1"
+      register: output
 
     - debug:
-        var: ec2_controller.instances[0].network_interfaces[0].association.public_ip
+        var: output.cloudformation["ansible-cloudformation"].stack_outputs.ControllerIp
     
     - debug:
-        var: ec2_host.instances[0].network_interfaces[0].private_ip_address
+        var: output.cloudformation["ansible-cloudformation"].stack_outputs.HostIp
 
     - name: Add controller public IP to group
-      add_host: hostname={{ ec2_controller.instances[0].network_interfaces[0].association.public_ip }} groups=ec2controller
+      add_host: hostname={{ output.cloudformation["ansible-cloudformation"].stack_outputs.ControllerIp }} groups=ec2controller
 
     - name: Add host private ip to group
-      add_host: hostname={{ ec2_host.instances[0].network_interfaces[0].private_ip_address }} groups=ec2host
+      add_host: hostname={{ output.cloudformation["ansible-cloudformation"].stack_outputs.HostIp }} groups=ec2host
 
     - name: accept new ssh fingerprints                                         
-      shell: ssh-keyscan -H {{ ec2_controller.instances[0].network_interfaces[0].association.public_ip }} >> ~/.ssh/known_hosts 
+      shell: ssh-keyscan -H {{ output.cloudformation["ansible-cloudformation"].stack_outputs.ControllerIp }} >> ~/.ssh/known_hosts 
 
 - hosts: ec2controller
   user: ec2-user
