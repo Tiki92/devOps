@@ -2,8 +2,6 @@
 - name: test
   hosts: localhost
   gather_facts: no
-  vars_files:
-    - .keys.yml
   tasks:
     - set_fact:
          home_dir: "{{ lookup('env', 'HOME') }}"
@@ -11,47 +9,20 @@
 
     - name: Create key pair
       ec2_key:
-        aws_access_key: "{{ AWS_ACCESS_KEY_ID }}"
-        aws_secret_key: "{{ AWS_SECRET_ACCESS_KEY }}"
-        region: "{{ AWS_REGION }}"
         name: ansible-keypair
         key_material: "{{ lookup('file', '{{ home_dir }}/.ssh/id_rsa.pub') }}"
 
     - name: create a cloudformation stack
       cloudformation:
-        aws_access_key: '{{ AWS_ACCESS_KEY_ID }}'
-        aws_secret_key: '{{ AWS_SECRET_ACCESS_KEY }}'
         stack_name: "ansible-cloudformation"
         state: "present"
-        region: "eu-central-1"
         disable_rollback: true
         template: "devOps_stack.yml"
         tags:
           Stack: "ansible-cloudformation"
 
-    # - name: Get Controller Info
-    #   ec2_instance_info:
-    #     aws_access_key: "{{ AWS_ACCESS_KEY_ID }}"
-    #     aws_secret_key: "{{ AWS_SECRET_ACCESS_KEY }}"
-    #     region: "{{ AWS_REGION }}"
-    #     filters:
-    #       tag:Name: "Controller"
-    #   register: ec2_controller
-
-    # - name: Get Host info
-    #   ec2_instance_info:
-    #     aws_access_key: "{{ AWS_ACCESS_KEY_ID }}"
-    #     aws_secret_key: "{{ AWS_SECRET_ACCESS_KEY }}"
-    #     region: "{{ AWS_REGION }}"
-    #     filters:
-    #       tag:Name: "Host"
-    #   register: ec2_host
-
     - cloudformation_info:
-        aws_access_key: '{{ AWS_ACCESS_KEY_ID }}'
-        aws_secret_key: '{{ AWS_SECRET_ACCESS_KEY }}'
         stack_name: ansible-cloudformation
-        region: "eu-central-1"
       register: output
 
     - debug:
@@ -105,8 +76,6 @@
   user: jenkins
   become: true
   gather_facts: no
-  vars_files:
-    - .keys.yml
   roles:
     - jenkins
   tags: jenkins

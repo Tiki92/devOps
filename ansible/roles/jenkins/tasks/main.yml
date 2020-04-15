@@ -12,26 +12,49 @@
   loop:
     - docker
     - git
+    - python3
     - python-pip
     - "{{java.VERSION}}"
+
+- name: Copy credentials
+  copy:
+    src: "{{ home_dir }}/.aws"
+    dest: /home/jenkins/
+    owner: jenkins
+    group: jenkins
+    mode: '0644'
+
+- name: Install boto, boto3
+  pip:
+    name: "{{ item }}"
+    executable: pip-3.7
+  loop:
+    - boto==2.38.0
+    - boto3
+    - botocore==1.15.34
 
 - name: Install boto, boto3
   pip:
     name: "{{ item }}"
   loop:
     - boto==2.38.0
-    - boto3==1.2.2
+    - boto3
     - botocore==1.15.34
+    
+
+- name: Install ansible, python-jenkins
+  pip:
+    name: "{{ item }}"
+    executable: pip3
+  loop:
     - ansible
     - python-jenkins
-  
+
 - name: Instace IP
   cloudformation_info:
-    aws_access_key: '{{ AWS_ACCESS_KEY_ID }}'
-    aws_secret_key: '{{ AWS_SECRET_ACCESS_KEY }}'
     stack_name: ansible-cloudformation
-    region: "eu-central-1"
   register: output
+  become: false
   
 - name: accept new ssh fingerprints
   become: false                                         
@@ -75,7 +98,7 @@
   set_fact:
     home_dir: "{{ lookup('env', 'HOME') }}"
 
-- name: Copy pubkey
+- name: Copy privatekey
   authorized_key:
     user: jenkins
     state: present
@@ -137,6 +160,37 @@
     delay: 7
     timeout: 90
 
+- name: Jenkins authenticate
+  uri:
+    url: 'http://{{ output.cloudformation["ansible-cloudformation"].stack_outputs.ControllerIp }}/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,":",//crumb)'
+    user: admin
+    password: admin
+    force_basic_auth: yes
+    return_content: yes
+  register: crumb
+
+- name: Create Jenkins credentials
+  uri:
+    method: POST
+    url: 'http://{{ output.cloudformation["ansible-cloudformation"].stack_outputs.ControllerIp }}:8080/credentials/store/system/domain/_/createCredentials'
+    user: admin
+    password: admin
+    force_basic_auth: yes
+    headers:
+      Jenkins-Crumb: "{{ crumb.content.split(':')[1] }}"
+    body: |
+      json={
+        "": "0",
+        "credentials": {
+          "scope": "GLOBAL",
+          "id": "12",
+          "username": "admin",
+          "password": "assist1234",
+          "description": "My new credentials",
+          "$class": "com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl"
+        }
+      }
+
 - name: Install plugins
   jenkins_plugin:
     name: "{{ item }}"
@@ -157,14 +211,6 @@
     owner: jenkins
     group: jenkins
     mode: '0755'
-
-- name: Copy keys file
-  copy:
-    src: ../../../.keys.yml
-    dest: "/var/lib/jenkins/workspace/.keys.yml"
-    owner: jenkins
-    group: jenkins
-    mode: '0644'
 
 - name: Create jenkins job
   jenkins_job:

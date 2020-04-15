@@ -7,9 +7,6 @@
   
     - name: Get Host info
       ec2_instance_info:
-        aws_access_key: "{{ AWS_ACCESS_KEY_ID }}"
-        aws_secret_key: "{{ AWS_SECRET_ACCESS_KEY }}"
-        region: "{{ AWS_REGION }}"
         filters:
           tag:Name: "Host"
       register: ec2_host
